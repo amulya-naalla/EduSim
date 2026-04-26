@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="EduSim — Step inside an AI-powered 3D classroom and learn STEM subjects through immersive simulation." />
+  <title>EduSim — Step Inside the Classroom</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- ═══════════════════════════════════════════
+       SESSION START SCREEN
+  ═══════════════════════════════════════════ -->
+  <div id="start-screen" class="screen active">
+    <div class="start-bg"></div>
+    <div class="start-content">
+      <div class="logo-block">
+        <div class="logo-icon">🎓</div>
+        <h1 class="logo-title">EduSim</h1>
+        <p class="logo-tagline">Step inside the classroom. Learn by doing.</p>
+      </div>
+
+      <div class="subject-selector">
+        <h2 class="selector-label">Choose your subject</h2>
+        <div class="subject-cards" id="subject-cards">
+          <button class="subject-card" id="btn-physics" data-subject="physics">
+            <span class="card-icon">⚡</span>
+            <span class="card-name">Physics</span>
+            <span class="card-desc">Mechanics, Waves, Circuits</span>
+          </button>
+          <button class="subject-card" id="btn-chemistry" data-subject="chemistry">
+            <span class="card-icon">⚗️</span>
+            <span class="card-name">Chemistry</span>
+            <span class="card-desc">Bonding, Reactions, Structure</span>
+          </button>
+          <button class="subject-card" id="btn-maths" data-subject="maths">
+            <span class="card-icon">∫</span>
+            <span class="card-name">Mathematics</span>
+            <span class="card-desc">Calculus, Limits, Probability</span>
+          </button>
+          <button class="subject-card" id="btn-custom" data-subject="custom" style="border: 1px dashed rgba(255,255,255,0.4);">
+            <span class="card-icon">📄</span>
+            <span class="card-name">Custom Syllabus</span>
+            <span class="card-desc">Upload a PDF</span>
+            <input type="file" id="pdf-upload" accept=".pdf" style="display: none;" />
+          </button>
+        </div>
+      </div>
+
+      <div class="concept-selector hidden" id="concept-selector">
+        <h2 class="selector-label">Choose a concept</h2>
+        <div class="concept-list" id="concept-list"></div>
+      </div>
+
+      <button class="enter-btn hidden" id="enter-btn">
+        <span class="enter-icon">🚪</span>
+        Enter Classroom
+      </button>
+
+      <div class="controls-hint">
+        <span>WASD</span> Move &nbsp;|&nbsp; <span>Mouse</span> Look &nbsp;|&nbsp; <span>Click</span> Interact &nbsp;|&nbsp; <span>D</span> Notes &nbsp;|&nbsp; <span>ESC</span> Unlock
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       3D CANVAS
+  ═══════════════════════════════════════════ -->
+  <canvas id="edusim-canvas"></canvas>
+
+  <!-- ═══════════════════════════════════════════
+       HUD OVERLAYS (inside classroom)
+  ═══════════════════════════════════════════ -->
+
+  <!-- Crosshair -->
+  <div id="crosshair" class="hidden">
+    <div class="ch-h"></div>
+    <div class="ch-v"></div>
+  </div>
+
+  <!-- Phase / status banner -->
+  <div id="phase-banner" class="hidden" style="pointer-events: auto;">
+    <span id="phase-text">Lecture Phase</span>
+    <select id="speed-selector" class="speed-selector" title="Lecture Speed">
+      <option value="0.75">0.75x</option>
+      <option value="1.0" selected>1.0x</option>
+      <option value="1.25">1.25x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2.0">2.0x</option>
+    </select>
+    <button id="exit-btn" class="exit-btn" title="Exit Session">✖</button>
+  </div>
+
+  <!-- Dialogue Box -->
+  <div id="dialogue-box" class="hidden">
+    <div id="dialogue-speaker">Professor Chen</div>
+    <div id="dialogue-text"></div>
+    <div id="dialogue-cursor">▌</div>
+  </div>
+
+  <!-- Interaction prompt -->
+  <div id="interact-prompt" class="hidden">
+    <span id="interact-label">Click to interact</span>
+  </div>
+
+  <!-- Thought bubbles container -->
+  <div id="bubbles-container"></div>
+
+  <!-- Answer Input Modal -->
+  <div id="answer-modal" class="hidden">
+    <div class="answer-modal-inner">
+      <div class="answer-prompt-text" id="answer-prompt-text">Your answer:</div>
+      <textarea id="answer-input" placeholder="Type your answer here..." rows="3" spellcheck="false"></textarea>
+      <div class="answer-actions">
+        <button id="answer-submit" class="btn-primary">Submit Answer</button>
+        <span class="answer-hint">or press Enter</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session Notes Overlay -->
+  <div id="notes-overlay" class="hidden">
+    <div class="notes-panel">
+      <div class="notes-header">
+        <span class="notes-title">📓 Session Notes</span>
+        <button id="notes-close" class="notes-close-btn">✕</button>
+      </div>
+      <div id="notes-content" class="notes-content">
+        <p class="notes-empty">Notes will appear here as the session progresses...</p>
+      </div>
+      <div class="notes-footer">
+        <button id="notes-copy" class="btn-secondary">📋 Copy Notes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SESSION END SCREEN
+  ═══════════════════════════════════════════ -->
+  <div id="end-screen" class="screen hidden">
+    <div class="end-content">
+      <div class="end-header">
+        <div class="end-icon">🎉</div>
+        <h2 class="end-title">Session Complete!</h2>
+        <p class="end-subtitle" id="end-subtitle">Great work today.</p>
+      </div>
+
+      <div class="end-stats">
+        <div class="stat-card" id="stat-concept">
+          <div class="stat-label">Concept Covered</div>
+          <div class="stat-value" id="end-concept">—</div>
+        </div>
+        <div class="stat-card" id="stat-score">
+          <div class="stat-label">Your Score</div>
+          <div class="stat-value score-display" id="end-score">—/5</div>
+        </div>
+      </div>
+
+      <div class="end-answer-block">
+        <div class="end-block-label">Your Answer</div>
+        <p id="end-player-answer" class="end-answer-text">—</p>
+      </div>
+
+      <div class="end-takeaway-block">
+        <div class="end-block-label">Key Takeaway</div>
+        <p id="end-takeaway" class="end-takeaway-text">—</p>
+      </div>
+
+      <div class="end-actions">
+        <button id="btn-review-notes" class="btn-secondary">📓 Review Notes</button>
+        <button id="btn-new-session" class="btn-primary">🔄 New Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="hidden">
+    <div class="loading-inner">
+      <div class="loading-spinner"></div>
+      <p id="loading-text">Preparing classroom...</p>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
